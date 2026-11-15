@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Payout Details | Sonar Bangla Haat</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Manrope:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+<div class="wrap page-center">
+  <header class="brand">
+    <a class="logo" href="https://sonarbanglahaat.com"><img src="assets/logo-256.png" alt="Sonar Bangla Haat" width="84" height="84"><span class="t1">Secure Payout Details</span></a>
+  </header>
+  <main>
+    <div id="loading" class="sub"><span class="spin"></span>Checking your secure link…</div>
+
+    <section id="form" hidden>
+      <div class="eyebrow">Congratulations · Application approved</div>
+      <h1 class="display" style="font-size:clamp(34px,5vw,56px)">Where should we <em>send your payouts?</em></h1>
+      <p class="sub" id="hello"></p>
+      <div class="form">
+        <div class="field full"><label for="holder">Account Holder Name *</label><input id="holder" placeholder=" " autocomplete="off"><div class="msg"></div></div>
+        <div class="field"><label for="bank">Bank Name *</label><input id="bank" placeholder=" " autocomplete="off"><div class="msg"></div></div>
+        <div class="field"><label for="ifsc">IFSC Code *</label><input id="ifsc" maxlength="11" placeholder=" " autocomplete="off" style="text-transform:uppercase"><div class="msg"></div></div>
+        <div class="field"><label for="acct">Account Number *</label><input id="acct" inputmode="numeric" maxlength="18" placeholder=" " autocomplete="off"><div class="msg"></div></div>
+        <div class="field"><label for="acct2">Confirm Account Number *</label><input id="acct2" inputmode="numeric" maxlength="18" placeholder=" " autocomplete="off"><div class="msg"></div></div>
+        <div class="hp" aria-hidden="true"><label>Website<input id="website" tabindex="-1" autocomplete="off"></label></div>
+      </div>
+      <div class="note">The bank account must be in your business or brand name and match the cancelled cheque you uploaded. This private link works once.</div>
+      <div class="nav"><span></span><button class="btn-editorial" id="go" type="button">Save payout details <span class="arrow">→</span></button></div>
+    </section>
+
+    <section id="done" hidden>
+      <div class="eyebrow">Received</div>
+      <h1 class="display" style="font-size:clamp(34px,5vw,56px)">Thank you — <em>all set.</em></h1>
+      <p class="lede">Your payout details are saved securely. Our team will be in touch to guide you through your first product listing.</p>
+      <div class="done-actions"><a class="btn-editorial" href="https://sonarbanglahaat.com">Visit the marketplace <span class="arrow">→</span></a></div>
+    </section>
+
+    <section id="bad" hidden>
+      <div class="eyebrow">Link unavailable</div>
+      <h1 class="display" style="font-size:clamp(34px,5vw,56px)">This link is <em>no longer valid.</em></h1>
+      <p class="lede">It may have expired or already been used. Please write to <a href="mailto:support@sonarbanglahaat.com">support@sonarbanglahaat.com</a> and we'll send a fresh one.</p>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script src="assets/config.js"></script>
+<script src="assets/payout.js" defer></script>
+</body>
+</html>
