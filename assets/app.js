@@ -239,8 +239,10 @@
       var on = S.cats.indexOf(x[0]) > -1;
       var b = document.createElement("button"); b.type = "button"; b.className = "cat" + (on ? " on" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
       b.style.setProperty("--tint", x[3]); b.style.setProperty("--d", (i * 45) + "ms");
-      b.innerHTML = '<span class="art"><svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><span class="nm"></span>';
+      var hasPhoto = (window.SBH_CAT_PHOTOS || []).indexOf(x[2]) > -1;
+      b.innerHTML = '<span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" loading="lazy" decoding="async">' : "") + '<svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><span class="nm"></span>';
       b.querySelector(".nm").textContent = x[0];
+      var im = b.querySelector("img"); if (im) im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); });
       b.addEventListener("click", function () {
         var j = S.cats.indexOf(x[0]); if (j > -1) S.cats.splice(j, 1); else S.cats.push(x[0]);
         var now = S.cats.indexOf(x[0]) > -1; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false"); catCount(); applyFssai(); persist();

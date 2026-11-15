@@ -217,3 +217,9 @@ footer.foot a{text-decoration:none}footer.foot a:hover{color:var(--sbh-terracott
 @keyframes steam{0%,100%{opacity:.15;transform:translateY(2px)}50%{opacity:.45;transform:translateY(-3px)}}
 @media (hover:none){.cat:hover{transform:none;box-shadow:none;border-color:var(--sbh-border)}.cat.on:hover{border-color:var(--sbh-terracotta);box-shadow:0 0 0 2px var(--sbh-terracotta)}}
 @media (prefers-reduced-motion:reduce){.cat{opacity:1;transform:none}}
+
+.cat .art.photo>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.cat .art.photo>svg{display:none}
+.cat:hover .art.photo>img{transform:scale(1.08)}
+.cat .art.photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(59,23,19,.28),transparent 45%)}
+.cat .tick{z-index:2}
