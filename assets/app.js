@@ -137,6 +137,7 @@
     $("#dz_gst").hidden = !yes;
     $("#pan_number").closest(".field").querySelector("label").textContent = "PAN Number *";
     if (!yes) S.gstOk = false;
+    $("#bizForm").hidden = !S.gst; // nothing chosen yet: no manual entry
     lockFields();
     if (yes && load !== false && !$("#capImg img")) loadCaptcha();
   }
