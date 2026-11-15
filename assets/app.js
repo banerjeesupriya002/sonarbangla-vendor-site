@@ -233,23 +233,92 @@
     ["Bengal Handicrafts & Home Decor",0,"craft","#f2d7c3"],["Bengal Artisan Crafts & Regional Specialities",0,"artisan","#ecd5cf"],["Bengali Gift Hampers & Combos",1,"hamper","#f6dccb"],
     ["Incense, Dhoop & Puja Items",0,"incense","#efe0d2"],["Bengali Tea & Beverages",1,"drink","#ecdfcb"],["Others",0,"other","#f1ead9"]
   ];
+  /* ---------- revolving category rack ---------- */
+  var RK = { angle: 0, vel: 0, target: null, drag: false, down: false, sx: 0, px: 0, pt: 0, sway: 0, swayV: 0, W: 150, R: 480, step: 20, grid: false, idle: 0, hover: false, suppress: false, started: false, t: 0, shades: [] };
+  var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function nowMs() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function rackSize() {
+    var rack = $("#rack"), w = rack.clientWidth || 360, n = CATS.length;
+    RK.W = w < 480 ? 142 : (w < 820 ? 172 : 200); RK.step = 360 / n;
+    RK.R = Math.round(RK.W / 2 / Math.tan(Math.PI / n) * 1.1);
+    rack.style.setProperty("--W", RK.W + "px"); rack.style.setProperty("--R", RK.R + "px");
+    rack.style.setProperty("--H", Math.round(RK.W * 0.75 + 62 + 26) + "px");
+  }
+  function centerOn(i) { var t = i * RK.step; return t + 360 * Math.round((RK.angle - t) / 360); }
   function buildChips() {
-    var c = $("#chips"); c.innerHTML = "";
+    var c = $("#chips"); c.innerHTML = ""; RK.shades = [];
+    c.insertAdjacentHTML("beforeend", '<span class="rail" aria-hidden="true"></span>');
+    rackSize();
     CATS.forEach(function (x, i) {
-      var on = S.cats.indexOf(x[0]) > -1;
+      var on = S.cats.indexOf(x[0]) > -1, hasPhoto = (window.SBH_CAT_PHOTOS || []).indexOf(x[2]) > -1;
       var b = document.createElement("button"); b.type = "button"; b.className = "cat" + (on ? " on" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
-      b.style.setProperty("--tint", x[3]); b.style.setProperty("--d", (i * 45) + "ms");
-      var hasPhoto = (window.SBH_CAT_PHOTOS || []).indexOf(x[2]) > -1;
-      b.innerHTML = '<span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" loading="lazy" decoding="async">' : "") + '<svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><span class="nm"></span>';
+      b.style.setProperty("--tint", x[3]); b.style.setProperty("--ry", (i * RK.step) + "deg"); b.style.setProperty("--o", "0");
+      b.innerHTML = '<span class="sway"><span class="hook" aria-hidden="true"></span>' +
+        '<span class="face front"><span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" loading="lazy" decoding="async" draggable="false">' : "") +
+        '<svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>' +
+        '<span class="nm"></span><span class="shade"></span></span>' +
+        '<span class="face back" aria-hidden="true"><img src="assets/logo-256.png" alt="" draggable="false"></span></span>';
       b.querySelector(".nm").textContent = x[0];
-      var im = b.querySelector("img"); if (im) im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); });
+      var im = b.querySelector(".art img"); if (im) im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); });
       b.addEventListener("click", function () {
+        if (RK.suppress) return;
         var j = S.cats.indexOf(x[0]); if (j > -1) S.cats.splice(j, 1); else S.cats.push(x[0]);
-        var now = S.cats.indexOf(x[0]) > -1; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false"); catCount(); applyFssai(); persist();
+        var now = S.cats.indexOf(x[0]) > -1; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false");
+        if (!RK.grid) { RK.target = centerOn(i); } RK.idle = nowMs(); catCount(); applyFssai(); persist();
       });
-      c.appendChild(b);
+      b.addEventListener("focus", function () { if (!RK.grid && !RK.drag) { RK.target = centerOn(i); RK.idle = nowMs(); } });
+      c.appendChild(b); RK.shades.push(b);
     });
-    catCount();
+    catCount(); rackStart();
+  }
+  function rackStart() {
+    if (RK.started) return; RK.started = true;
+    var st = $("#stage"), ring = $("#chips");
+    st.addEventListener("pointerdown", function (e) { if (RK.grid) return; RK.down = true; RK.drag = false; RK.sx = RK.px = e.clientX; RK.pt = nowMs(); RK.target = null; RK.idle = nowMs(); });
+    st.addEventListener("pointermove", function (e) {
+      if (!RK.down) return;
+      var t = nowMs(), dx = e.clientX - RK.px, dt = Math.max(1, t - RK.pt);
+      if (!RK.drag && Math.abs(e.clientX - RK.sx) > 6) { RK.drag = true; try { st.setPointerCapture(e.pointerId); } catch (x) {} }
+      if (RK.drag) { RK.angle -= dx * 0.3; RK.vel = RK.vel * 0.6 + (-dx * 0.3 / dt * 1000) * 0.4; RK.px = e.clientX; RK.pt = t; RK.idle = t; }
+    });
+    function up() { if (!RK.down) return; RK.down = false; if (RK.drag) { RK.drag = false; RK.suppress = true; setTimeout(function () { RK.suppress = false; }, 60); } RK.idle = nowMs(); }
+    st.addEventListener("pointerup", up); st.addEventListener("pointercancel", up);
+    st.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") RK.hover = true; });
+    st.addEventListener("pointerleave", function (e) { RK.hover = false; RK.idle = nowMs(); });
+    st.addEventListener("wheel", function (e) { if (RK.grid || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; e.preventDefault(); RK.target = null; RK.angle += e.deltaX * 0.15; RK.idle = nowMs(); }, { passive: false });
+    st.addEventListener("keydown", function (e) { if (e.key === "ArrowLeft") { rackStep(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { rackStep(1); e.preventDefault(); } });
+    $("#rkPrev").addEventListener("click", function () { rackStep(-1); });
+    $("#rkNext").addEventListener("click", function () { rackStep(1); });
+    $("#rkGrid").addEventListener("click", function () {
+      RK.grid = !RK.grid; $("#rack").classList.toggle("grid", RK.grid); this.textContent = RK.grid ? "Rack view" : "Grid view"; this.setAttribute("aria-pressed", RK.grid ? "true" : "false");
+      if (RK.grid) { ring.style.transform = ""; } RK.idle = nowMs();
+    });
+    window.addEventListener("resize", function () { rackSize(); });
+    RK.t = nowMs(); requestAnimationFrame(rackFrame);
+  }
+  function rackStep(d) { var base = (RK.target != null ? RK.target : Math.round(RK.angle / RK.step) * RK.step); RK.target = base + d * RK.step; RK.idle = nowMs(); }
+  function rackFrame() {
+    var t = nowMs(), dt = Math.min(0.05, (t - RK.t) / 1000); RK.t = t;
+    var s5 = $("#s5");
+    if (!s5 || !s5.classList.contains("on") || RK.grid) { setTimeout(function () { RK.t = nowMs(); requestAnimationFrame(rackFrame); }, 250); return; }
+    var drive = 0;
+    if (RK.target != null) {
+      var d = RK.target - RK.angle; RK.angle += d * Math.min(1, dt * 7); drive = d * 4;
+      if (Math.abs(d) < 0.05) { RK.angle = RK.target; RK.target = null; RK.vel = 0; }
+    } else if (!RK.drag) {
+      RK.angle += RK.vel * dt; RK.vel *= Math.pow(0.04, dt); drive = RK.vel;
+      if (!REDUCED && !RK.hover && !RK.down && t - RK.idle > 2600 && Math.abs(RK.vel) < 20) { RK.angle += 7 * dt; drive += 7; }
+    } else { drive = RK.vel; }
+    if (!REDUCED) { var acc = -45 * RK.sway - 5.5 * RK.swayV + 1.1 * Math.max(-420, Math.min(420, drive)) * -0.06 * 8; RK.swayV += acc * dt; RK.sway += RK.swayV * dt; RK.sway = Math.max(-11, Math.min(11, RK.sway)); }
+    var ring = $("#chips");
+    ring.style.transform = "translateZ(" + (-RK.R) + "px) rotateY(" + (-RK.angle) + "deg)";
+    ring.style.setProperty("--sway", RK.sway.toFixed(2) + "deg");
+    for (var i = 0; i < RK.shades.length; i++) {
+      var rel = ((i * RK.step - RK.angle) % 360 + 540) % 360 - 180, f = (1 + Math.cos(rel * Math.PI / 180)) / 2;
+      var o = Math.min(0.82, Math.pow(1 - f, 1.1) * 1.15).toFixed(2);
+      if (RK.shades[i]._o !== o) { RK.shades[i]._o = o; RK.shades[i].style.setProperty("--o", o); }
+    }
+    requestAnimationFrame(rackFrame);
   }
   function catCount() { var n = S.cats.length, e = $("#catCount"); if (e) { e.textContent = n ? n + " selected" : "None selected yet"; e.classList.toggle("has", n > 0); } }
   function hasFood() { return CATS.some(function (x) { return x[1] && S.cats.indexOf(x[0]) > -1; }); }
