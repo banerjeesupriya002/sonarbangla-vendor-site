@@ -183,3 +183,7 @@ footer.foot a{text-decoration:none}footer.foot a:hover{color:var(--sbh-terracott
 .spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:8px}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.field.locked input,.field.locked select{background:rgba(74,50,40,.05);color:#4a3228;cursor:not-allowed}
+.field.locked label::after{content:" \1F512";font-size:.8em}
+#gstLockHint{font-size:13px;color:#7a6a60;margin:6px 0 14px}

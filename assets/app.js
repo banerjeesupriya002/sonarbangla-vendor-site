@@ -19,7 +19,8 @@
   ];
   var FIELDS = ["email","owner_name","mobile","whatsapp","brand_name","legal_name","pan_number","gstin","address_line_1","address_line_2","district","state","pin_code","brand_story","fssai_number"];
 
-  var S = { token: "", step: 1, gst: "", fssai: "", cats: [], data: {}, sid: "" };
+  var S = { token: "", step: 1, gst: "", fssai: "", cats: [], data: {}, sid: "", gstOk: false };
+  var LOCK = ["legal_name", "pan_number", "address_line_1", "address_line_2", "district", "state", "pin_code"];
   var files = {};
   var saveTimer = null;
 
@@ -60,7 +61,7 @@
   }
 
   /* ---------- state persistence ---------- */
-  function collect() { FIELDS.forEach(function (k) { var e = $("#" + k); if (e) S.data[k] = e.value.trim(); }); S.data.gst_registered = S.gst; S.data.fssai_has = S.fssai; S.data.product_categories = S.cats.slice(); }
+  function collect() { FIELDS.forEach(function (k) { var e = $("#" + k); if (e) S.data[k] = e.value.trim(); }); S.data.gst_ok = S.gstOk ? 1 : 0; S.data.gst_registered = S.gst; S.data.fssai_has = S.fssai; S.data.product_categories = S.cats.slice(); }
   function persist(remote) {
     collect();
     try { localStorage.setItem(LS, JSON.stringify({ token: S.token, step: S.step, gst: S.gst, fssai: S.fssai, cats: S.cats, data: S.data })); } catch (e) {}
@@ -73,6 +74,7 @@
     if (!o) return;
     S.token = o.token || S.token; S.gst = o.gst || ""; S.fssai = o.fssai || ""; S.cats = o.cats || []; S.data = o.data || {};
     FIELDS.forEach(function (k) { if (S.data[k] != null) setVal(k, S.data[k]); });
+    S.gstOk = S.gst === "yes" && (!!Number(S.data.gst_ok) || (okGSTIN(S.data.gstin || "") && !!S.data.legal_name && !!S.data.pin_code));
     $$("[data-gst]").forEach(function (b) { b.classList.toggle("on", b.dataset.gst === S.gst); });
     $$("[data-fssai]").forEach(function (b) { b.classList.toggle("on", b.dataset.fssai === S.fssai); });
     buildChips(); applyGst(false); applyFssai();
@@ -134,7 +136,20 @@
     $("#gstPanel").hidden = !yes;
     $("#dz_gst").hidden = !yes;
     $("#pan_number").closest(".field").querySelector("label").textContent = "PAN Number *";
+    if (!yes) S.gstOk = false;
+    lockFields();
     if (yes && load !== false && !$("#capImg img")) loadCaptcha();
+  }
+  // GST "Yes": business/address details come only from the GST portal lookup (no manual typing).
+  function lockFields() {
+    var yes = S.gst === "yes", hint = $("#gstLockHint");
+    LOCK.forEach(function (k) {
+      var e = $("#" + k); if (!e) return;
+      var lock = yes && (!S.gstOk || !!e.value || k === "address_line_2");
+      if (e.tagName === "SELECT") e.disabled = lock; else e.readOnly = lock;
+      e.closest(".field").classList.toggle("locked", lock);
+    });
+    if (hint) { hint.hidden = !yes; hint.textContent = S.gstOk ? "These details were fetched from the GST portal. Any field left empty can be completed by you." : "Enter your GSTIN and the captcha above — your business and address details will be filled automatically from the GST portal."; }
   }
   function loadCaptcha() {
     var box = $("#capImg"); box.textContent = "Loading…"; S.sid = ""; setVal("gstCaptcha", "");
@@ -152,7 +167,10 @@
       S.gst = b.dataset.gst; $$("[data-gst]").forEach(function (x) { x.classList.toggle("on", x === b); }); applyGst(true); persist();
     }); });
     $("#capRefresh").addEventListener("click", loadCaptcha);
-    $("#gstin").addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); });
+    $("#gstin").addEventListener("input", function () {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (S.gstOk && this.value !== S.data.gstin_ok_for) { S.gstOk = false; LOCK.forEach(function (k) { var e = $("#" + k); if (e) { if (e.tagName === "SELECT") e.disabled = false; e.readOnly = false; setVal(k, ""); } }); lockFields(); }
+    });
     $("#pan_number").addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); });
     $("#gstFetch").addEventListener("click", function () {
       var g = val("gstin"), c = val("gstCaptcha"); err("gstin", "");
@@ -160,9 +178,9 @@
       if (!c) { setStatus("Type the captcha shown above.", "bad"); return; }
       var b = this; b.disabled = true; setStatus("Fetching from the GST portal…");
       api("/gst/lookup", { json: { sid: S.sid, gstin: g, captcha: c } }).then(function (r) {
-        if (r.data) { fillFromGST(r.data); }
-        setStatus("✓ Details fetched and filled below" + (r.data && r.data.status ? " · GST status: " + r.data.status : "") + ". Please review and correct if needed.", "ok");
-        if (!r.data || !r.data.address_line_1) setStatus("GSTIN verified. Some details weren't returned — please complete the rest manually.", "ok");
+        if (r.data) { fillFromGST(r.data); S.gstOk = true; S.data.gstin_ok_for = g; lockFields(); persist(true); }
+        setStatus("✓ Details fetched and filled below" + (r.data && r.data.status ? " · GST status: " + r.data.status : "") + ".", "ok");
+        if (!r.data || !r.data.address_line_1) setStatus("GSTIN verified. The GST portal didn't return a few details — please complete the empty fields.", "ok");
         loadCaptcha();
       }).catch(function (e) {
         var m = e.message || "Lookup failed.";
@@ -175,6 +193,7 @@
       var root = $("#s4"); clearErr(root); var ok = true;
       if (!S.gst) { toast("Please tell us whether you are GST registered.", true); return; }
       var g = val("gstin");
+      if (S.gst === "yes" && !S.gstOk) { err("gstin", "Fetch your details from the GST portal first"); toast("Please fetch your details from the GST portal using the captcha.", true); return; }
       if (S.gst === "yes") {
         if (!okGSTIN(g)) { err("gstin", "Enter a valid 15-character GSTIN"); ok = false; }
         else { var pg = g.slice(2, 12); if (val("pan_number") && val("pan_number") !== pg) { err("pan_number", "PAN doesn't match the GSTIN"); ok = false; } if (!val("pan_number")) setVal("pan_number", pg); if (!val("state") && GST_STATE[g.slice(0, 2)]) setVal("state", GST_STATE[g.slice(0, 2)]); }
