@@ -288,7 +288,7 @@
   /* ---------- boot ---------- */
   function boot() {
     var st = $("#state"); st.innerHTML = '<option value=""></option>' + STATES.map(function (s) { return "<option>" + s + "</option>"; }).join("");
-    initWelcome(); initSignup(); initGst(); initProducts(); initDocs();
+    initWelcome(); initSignup(); initGst(); applyGst(false); initProducts(); initDocs();
     $$("[data-next]").forEach(function (b) { b.addEventListener("click", function () { go(S.step + 1); }); });
     $$("[data-back]").forEach(function (b) { b.addEventListener("click", function () { go(S.step - 1); }); });
     $$(".field input,.field textarea,.field select").forEach(function (e) {
