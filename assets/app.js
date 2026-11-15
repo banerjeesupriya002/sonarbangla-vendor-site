@@ -73,6 +73,13 @@
     buildChips(); applyGst(false); applyFssai();
   }
 
+  var _pre = false;
+  function preloadPhotos() {
+    if (_pre) return; _pre = true;
+    var list = (window.SBH_CAT_PHOTOS || []).slice(), idle = window.requestIdleCallback || function (f) { return setTimeout(f, 300); };
+    (function next() { if (!list.length) return; idle(function () { var i = new Image(); i.decoding = "async"; i.src = "assets/cats/" + list.shift() + ".jpg"; next(); }); })();
+  }
+
   /* ---------- navigation ---------- */
   function go(n, push) {
     S.step = n;
@@ -80,6 +87,7 @@
     $("#pcur").textContent = String(n).padStart(2, "0");
     $("#pfill").style.transform = "scaleX(" + Math.max(0, Math.min(1, (n - 1) / (TOTAL - 1))) + ")";
     if (n === 6) buildSummary();
+    if (n >= 3) preloadPhotos();
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (push !== false) { try { history.replaceState(null, "", location.pathname + (S.token && n < 7 ? "" : "")); } catch (e) {} }
     if (n < 7) persist(n > 3);
@@ -254,12 +262,12 @@
       var b = document.createElement("button"); b.type = "button"; b.className = "cat" + (on ? " on" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
       b.style.setProperty("--tint", x[3]); b.style.setProperty("--ry", (i * RK.step) + "deg"); b.style.setProperty("--o", "0");
       b.innerHTML = '<span class="sway"><span class="hook" aria-hidden="true"></span>' +
-        '<span class="face front"><span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" loading="lazy" decoding="async" draggable="false">' : "") +
+        '<span class="face front"><span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" decoding="async" draggable="false">' : "") +
         '<svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>' +
         '<span class="nm"></span><span class="shade"></span></span>' +
         '<span class="face back" aria-hidden="true"><img src="assets/logo-256.png" alt="" draggable="false"></span></span>';
       b.querySelector(".nm").textContent = x[0];
-      var im = b.querySelector(".art img"); if (im) im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); });
+      var im = b.querySelector(".art img"); if (im) { im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); }); im.addEventListener("load", function () { im.classList.add("ld"); }); if (im.complete && im.naturalWidth) im.classList.add("ld"); }
       b.addEventListener("click", function () {
         if (RK.suppress) return;
         var j = S.cats.indexOf(x[0]); if (j > -1) S.cats.splice(j, 1); else S.cats.push(x[0]);

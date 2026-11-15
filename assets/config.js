@@ -6,4 +6,4 @@ window.SBH_CONFIG = {
   WHATSAPP: ""
 };
 // Category photos: add a key here once assets/cats/<key>.jpg exists (4:3, ~800x600)
-window.SBH_CAT_PHOTOS = [];
+window.SBH_CAT_PHOTOS = ["rice","oil","ghee","spice","mixture","tea","snack","bori","achar","jaggery","sweet","pithe","craft","artisan","hamper","incense","drink","other"];
