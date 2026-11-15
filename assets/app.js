@@ -32,7 +32,7 @@
   function clearErr(root) { $$(".field.err", root).forEach(function (f) { f.classList.remove("err"); }); }
   function api(path, opts) {
     opts = opts || {};
-    var init = { method: opts.method || "GET", headers: {} };
+    var init = { method: opts.method || "GET", headers: {}, cache: "no-store" };
     if (opts.json) { init.method = "POST"; init.headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.json); }
     if (opts.form) { init.body = opts.form; init.method = "POST"; }
     return fetch(API + path, init).then(function (r) {
@@ -155,7 +155,7 @@
   }
   function loadCaptcha() {
     var box = $("#capImg"); box.textContent = "Loading…"; S.sid = ""; setVal("gstCaptcha", "");
-    api("/gst/captcha").then(function (r) { S.sid = r.sid; box.innerHTML = ""; var im = new Image(); im.alt = "GST portal captcha"; im.src = r.image; box.appendChild(im); })
+    api("/gst/captcha?_=" + Date.now() + Math.random().toString(36).slice(2, 7)).then(function (r) { S.sid = r.sid; box.innerHTML = ""; var im = new Image(); im.alt = "GST portal captcha"; im.src = r.image; box.appendChild(im); })
       .catch(function () { box.textContent = "Unavailable"; setStatus("The GST portal lookup is unavailable right now. Please fill the details manually below.", "bad"); });
   }
   function setStatus(m, c) { var s = $("#gstStatus"); s.textContent = m || ""; s.className = "status" + (c ? " " + c : ""); }
