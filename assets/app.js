@@ -10,13 +10,6 @@
   var STATES = ["Andaman and Nicobar Islands","Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chandigarh","Chhattisgarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Goa","Gujarat","Haryana","Himachal Pradesh","Jammu and Kashmir","Jharkhand","Karnataka","Kerala","Ladakh","Lakshadweep","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Puducherry","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal"];
   // GSTIN first two digits -> state
   var GST_STATE = {"01":"Jammu and Kashmir","02":"Himachal Pradesh","03":"Punjab","04":"Chandigarh","05":"Uttarakhand","06":"Haryana","07":"Delhi","08":"Rajasthan","09":"Uttar Pradesh","10":"Bihar","11":"Sikkim","12":"Arunachal Pradesh","13":"Nagaland","14":"Manipur","15":"Mizoram","16":"Tripura","17":"Meghalaya","18":"Assam","19":"West Bengal","20":"Jharkhand","21":"Odisha","22":"Chhattisgarh","23":"Madhya Pradesh","24":"Gujarat","26":"Dadra and Nagar Haveli and Daman and Diu","27":"Maharashtra","29":"Karnataka","30":"Goa","31":"Lakshadweep","32":"Kerala","33":"Tamil Nadu","34":"Puducherry","35":"Andaman and Nicobar Islands","36":"Telangana","37":"Andhra Pradesh","38":"Ladakh"};
-  var CATS = [
-    ["Traditional Rice & Grains",1],["Cold-Pressed Mustard Oil",1],["Pure Cow Ghee",1],["Bengali Spices & Masala",1],
-    ["Bengali Chanachur & Mixtures",1],["Tea",1],["Snacks & Nimki",1],["Bori & Sun-Dried Foods",1],
-    ["Traditional Achar & Kasundi",1],["Traditional Jaggery & Gur",1],["Traditional Bengali Sweets",1],["Bengali Pithe & Nadu",1],
-    ["Bengal Handicrafts & Home Decor",0],["Bengal Artisan Crafts & Regional Specialities",0],["Bengali Gift Hampers & Combos",1],
-    ["Incense, Dhoop & Puja Items",0],["Bengali Tea & Beverages",1],["Others",0]
-  ];
   var FIELDS = ["email","owner_name","mobile","whatsapp","brand_name","legal_name","pan_number","gstin","address_line_1","address_line_2","district","state","pin_code","brand_story","fssai_number"];
 
   var S = { token: "", step: 1, gst: "", fssai: "", cats: [], data: {}, sid: "", gstOk: false };
@@ -211,17 +204,52 @@
   }
 
   /* ---------- step 5: categories + FSSAI ---------- */
+  /* Category illustrations (original flat art, theme colours) */
+  var T = "#a73a22", M = "#d89e25", R = "#691c14", I = "#3b1713", C = "#f5efe6", G = "#7d8f4e", B = "#b9774a";
+  var ART = {
+    rice: '<ellipse cx="60" cy="62" rx="30" ry="6" fill="' + I + '" opacity=".12"/><path d="M30 46h60c0 18-12 26-30 26S30 64 30 46z" fill="' + T + '"/><path d="M34 46c4-12 48-12 52 0z" fill="#fff6e4"/><g fill="#fff"><ellipse cx="48" cy="40" rx="3" ry="1.6"/><ellipse cx="60" cy="37" rx="3" ry="1.6"/><ellipse cx="72" cy="40" rx="3" ry="1.6"/></g><path d="M96 66V30" stroke="' + G + '" stroke-width="2"/><g fill="' + M + '"><ellipse cx="96" cy="30" rx="3" ry="6"/><ellipse cx="91" cy="38" rx="3" ry="6" transform="rotate(-25 91 38)"/><ellipse cx="101" cy="38" rx="3" ry="6" transform="rotate(25 101 38)"/></g>',
+    oil: '<rect x="44" y="26" width="32" height="46" rx="8" fill="' + M + '"/><rect x="52" y="14" width="16" height="16" rx="3" fill="' + R + '"/><rect x="48" y="40" width="24" height="18" rx="3" fill="#fff6e4"/><path d="M54 49h12" stroke="' + T + '" stroke-width="2"/><g fill="' + M + '"><circle cx="24" cy="58" r="5"/><circle cx="96" cy="52" r="5"/></g><g fill="' + G + '"><circle cx="24" cy="58" r="2"/><circle cx="96" cy="52" r="2"/></g>',
+    ghee: '<ellipse cx="60" cy="70" rx="28" ry="5" fill="' + I + '" opacity=".12"/><path d="M34 36h52v26c0 8-10 10-26 10S34 70 34 62z" fill="' + M + '"/><rect x="30" y="26" width="60" height="12" rx="4" fill="' + R + '"/><rect x="42" y="46" width="36" height="16" rx="3" fill="#fff6e4"/><path d="M48 54h24" stroke="' + T + '" stroke-width="2"/>',
+    spice: '<g><path d="M14 64h34c0 8-8 12-17 12S14 72 14 64z" fill="' + T + '"/><path d="M16 64c3-10 29-10 32 0z" fill="#c9482c"/></g><g><path d="M44 58h34c0 8-8 12-17 12S44 66 44 58z" fill="' + M + '"/><path d="M46 58c3-10 29-10 32 0z" fill="#e8b445"/></g><g><path d="M74 64h34c0 8-8 12-17 12S74 72 74 64z" fill="' + G + '"/><path d="M76 64c3-10 29-10 32 0z" fill="#9aab68"/></g>',
+    mixture: '<path d="M28 44h64c0 20-14 30-32 30S28 64 28 44z" fill="' + R + '"/><g fill="' + M + '"><rect x="36" y="32" width="14" height="5" rx="2" transform="rotate(-20 43 34)"/><rect x="52" y="28" width="16" height="5" rx="2"/><rect x="70" y="32" width="14" height="5" rx="2" transform="rotate(22 77 34)"/><rect x="44" y="38" width="14" height="5" rx="2" transform="rotate(12 51 40)"/><rect x="62" y="38" width="14" height="5" rx="2" transform="rotate(-14 69 40)"/></g><g fill="' + T + '"><circle cx="50" cy="30" r="2.5"/><circle cx="72" cy="28" r="2.5"/><circle cx="60" cy="36" r="2.5"/></g>',
+    tea: '<path d="M28 44h50v14c0 12-10 18-25 18S28 70 28 58z" fill="' + T + '"/><path d="M78 48h6c6 0 8 4 8 8s-3 8-9 8h-5" fill="none" stroke="' + T + '" stroke-width="5"/><ellipse cx="53" cy="44" rx="25" ry="5" fill="' + B + '"/><path d="M42 36c-4-6 4-8 0-14M54 36c-4-6 4-8 0-14M66 36c-4-6 4-8 0-14" fill="none" stroke="' + I + '" stroke-width="2" stroke-linecap="round" opacity=".35" class="steam"/><path d="M96 68c8-2 14-10 14-18-8 0-14 8-14 18z" fill="' + G + '"/>',
+    snack: '<ellipse cx="60" cy="66" rx="40" ry="8" fill="' + C + '" stroke="' + B + '" stroke-width="1.5"/><g fill="' + M + '" stroke="#b27d12" stroke-width="1"><path d="M30 58l10-12 10 12-10 8z"/><path d="M52 52l10-14 10 14-10 9z"/><path d="M72 58l10-12 10 12-10 8z"/><path d="M46 62l8-9 8 9-8 6z" fill="#e8b445"/></g>',
+    bori: '<ellipse cx="60" cy="64" rx="42" ry="9" fill="' + B + '" opacity=".35"/><g fill="#f0dcb8" stroke="' + B + '" stroke-width="1.2"><circle cx="38" cy="54" r="9"/><circle cx="58" cy="48" r="9"/><circle cx="78" cy="54" r="9"/><circle cx="48" cy="62" r="8"/><circle cx="70" cy="63" r="8"/></g><g fill="' + B + '" opacity=".5"><circle cx="36" cy="52" r="1.4"/><circle cx="41" cy="56" r="1.4"/><circle cx="56" cy="46" r="1.4"/><circle cx="61" cy="50" r="1.4"/><circle cx="76" cy="52" r="1.4"/></g>',
+    achar: '<rect x="36" y="30" width="48" height="44" rx="8" fill="#e9d6b8"/><rect x="40" y="38" width="40" height="32" rx="5" fill="' + T + '"/><g fill="' + M + '"><circle cx="50" cy="48" r="3"/><circle cx="62" cy="56" r="3"/><circle cx="70" cy="46" r="3"/><circle cx="52" cy="62" r="3"/></g><path d="M32 30h56l-6-10H38z" fill="' + R + '"/><path d="M34 30c8 8 44 8 52 0" fill="none" stroke="' + M + '" stroke-width="2"/>',
+    jaggery: '<g stroke="' + I + '" stroke-opacity=".25" stroke-width="1"><path d="M24 56l16-14 26 4 4 18-18 10z" fill="#9a5b22"/><path d="M62 46l22-8 16 12-6 18-24 4z" fill="#b8742d"/><path d="M50 62l18 0 8 14-22 2z" fill="#7d4617"/></g><path d="M34 52l12 2M72 46l10 6" stroke="#e0a05a" stroke-width="2" stroke-linecap="round"/>',
+    sweet: '<ellipse cx="60" cy="68" rx="42" ry="8" fill="' + C + '" stroke="' + B + '" stroke-width="1.5"/><g><circle cx="40" cy="58" r="12" fill="#fff7ea" stroke="#f0dcc0" stroke-width="1.5"/><circle cx="62" cy="52" r="12" fill="#fff7ea" stroke="#f0dcc0" stroke-width="1.5"/><circle cx="82" cy="58" r="12" fill="#fff7ea" stroke="#f0dcc0" stroke-width="1.5"/></g><path d="M36 56c3-3 6-3 8 0M58 50c3-3 6-3 8 0M78 56c3-3 6-3 8 0" stroke="#f0dcc0" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="62" cy="40" r="3" fill="' + T + '"/>',
+    pithe: '<ellipse cx="60" cy="70" rx="42" ry="7" fill="' + I + '" opacity=".1"/><circle cx="38" cy="52" r="15" fill="#e9c27a"/><g fill="#fff6e4" opacity=".9"><circle cx="32" cy="46" r="2"/><circle cx="42" cy="44" r="2"/><circle cx="44" cy="54" r="2"/><circle cx="34" cy="56" r="2"/><circle cx="38" cy="50" r="2"/></g><path d="M62 58c0-16 36-16 36 0z" fill="#f0e2c6" stroke="' + B + '" stroke-width="1.5"/><path d="M62 58h36" stroke="' + B + '" stroke-width="1.5"/><path d="M68 54c4-4 8-4 12 0M82 54c4-4 8-4 12 0" stroke="' + B + '" stroke-width="1.4" fill="none"/>',
+    craft: '<ellipse cx="60" cy="74" rx="26" ry="5" fill="' + I + '" opacity=".12"/><path d="M40 34h40l6 10c4 8 2 24-6 28H40c-8-4-10-20-6-28z" fill="' + T + '"/><rect x="36" y="28" width="48" height="9" rx="4" fill="#8b2f1c"/><path d="M40 52h40M38 60h44" stroke="' + M + '" stroke-width="3" stroke-dasharray="4 4"/><g fill="' + M + '"><circle cx="48" cy="46" r="2.5"/><circle cx="60" cy="46" r="2.5"/><circle cx="72" cy="46" r="2.5"/></g><path d="M52 28c0-8 16-8 16 0" fill="none" stroke="' + G + '" stroke-width="3"/>',
+    artisan: '<rect x="28" y="22" width="64" height="54" rx="4" fill="' + R + '"/><rect x="34" y="28" width="52" height="42" fill="none" stroke="' + M + '" stroke-width="2"/><g stroke="' + M + '" stroke-width="2" fill="none"><path d="M60 32l12 12-12 12-12-12z"/><path d="M60 40l5 5-5 5-5-5z" fill="' + M + '"/></g><g fill="' + M + '"><circle cx="42" cy="36" r="2"/><circle cx="78" cy="36" r="2"/><circle cx="42" cy="62" r="2"/><circle cx="78" cy="62" r="2"/></g><path d="M34 70h52" stroke="' + T + '" stroke-width="3" stroke-dasharray="3 3"/>',
+    hamper: '<ellipse cx="60" cy="74" rx="36" ry="5" fill="' + I + '" opacity=".12"/><rect x="30" y="44" width="60" height="30" rx="3" fill="' + T + '"/><rect x="26" y="34" width="68" height="14" rx="3" fill="#c9482c"/><rect x="55" y="34" width="10" height="40" fill="' + M + '"/><path d="M60 34c-12-14-26-4-16 2 4 2 12 0 16-2zM60 34c12-14 26-4 16 2-4 2-12 0-16-2z" fill="' + M + '"/>',
+    incense: '<path d="M40 70h40l-4 8H44z" fill="' + B + '"/><ellipse cx="60" cy="70" rx="20" ry="4" fill="#8b5a36"/><g stroke="' + R + '" stroke-width="2.5" stroke-linecap="round"><path d="M52 68L46 28"/><path d="M60 68V24"/><path d="M68 68l6-40"/></g><g fill="' + M + '"><circle cx="46" cy="28" r="2"/><circle cx="60" cy="24" r="2"/><circle cx="74" cy="28" r="2"/></g><path d="M46 22c-6-6 6-8 0-16M60 18c-6-6 6-8 0-16M74 22c-6-6 6-8 0-16" fill="none" stroke="' + I + '" stroke-width="2" stroke-linecap="round" opacity=".3" class="steam"/>',
+    drink: '<path d="M38 36h44l-4 38c0 4-6 6-18 6s-18-2-18-6z" fill="#c07a4a"/><path d="M38 36h44" stroke="#a5623a" stroke-width="3"/><path d="M42 46h36" stroke="#e1a578" stroke-width="3"/><ellipse cx="60" cy="36" rx="22" ry="5" fill="#8b4a22"/><path d="M50 30c-3-5 3-6 0-12M62 30c-3-5 3-6 0-12M74 30c-3-5 3-6 0-12" fill="none" stroke="' + I + '" stroke-width="2" stroke-linecap="round" opacity=".3" class="steam"/>',
+    other: '<g fill="' + M + '"><path d="M60 20l6 18 18 6-18 6-6 18-6-18-18-6 18-6z"/></g><g fill="' + T + '"><path d="M92 18l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/><path d="M26 56l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></g>'
+  };
+  var CATS = [
+    ["Traditional Rice & Grains",1,"rice","#f3e6cf"],["Cold-Pressed Mustard Oil",1,"oil","#f6e8b8"],["Pure Cow Ghee",1,"ghee","#f8ecc4"],["Bengali Spices & Masala",1,"spice","#f4dccd"],
+    ["Bengali Chanachur & Mixtures",1,"mixture","#f3d9c8"],["Tea",1,"tea","#e6ecd2"],["Snacks & Nimki",1,"snack","#f6e3bd"],["Bori & Sun-Dried Foods",1,"bori","#efe3cf"],
+    ["Traditional Achar & Kasundi",1,"achar","#f2d4c8"],["Traditional Jaggery & Gur",1,"jaggery","#efd9bd"],["Traditional Bengali Sweets",1,"sweet","#f7e0d8"],["Bengali Pithe & Nadu",1,"pithe","#f3e4c8"],
+    ["Bengal Handicrafts & Home Decor",0,"craft","#f2d7c3"],["Bengal Artisan Crafts & Regional Specialities",0,"artisan","#ecd5cf"],["Bengali Gift Hampers & Combos",1,"hamper","#f6dccb"],
+    ["Incense, Dhoop & Puja Items",0,"incense","#efe0d2"],["Bengali Tea & Beverages",1,"drink","#ecdfcb"],["Others",0,"other","#f1ead9"]
+  ];
   function buildChips() {
     var c = $("#chips"); c.innerHTML = "";
-    CATS.forEach(function (x) {
-      var b = document.createElement("button"); b.type = "button"; b.className = "chip" + (S.cats.indexOf(x[0]) > -1 ? " on" : ""); b.textContent = x[0];
+    CATS.forEach(function (x, i) {
+      var on = S.cats.indexOf(x[0]) > -1;
+      var b = document.createElement("button"); b.type = "button"; b.className = "cat" + (on ? " on" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.style.setProperty("--tint", x[3]); b.style.setProperty("--d", (i * 45) + "ms");
+      b.innerHTML = '<span class="art"><svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span><span class="nm"></span>';
+      b.querySelector(".nm").textContent = x[0];
       b.addEventListener("click", function () {
-        var i = S.cats.indexOf(x[0]); if (i > -1) S.cats.splice(i, 1); else S.cats.push(x[0]);
-        b.classList.toggle("on"); applyFssai(); persist();
+        var j = S.cats.indexOf(x[0]); if (j > -1) S.cats.splice(j, 1); else S.cats.push(x[0]);
+        var now = S.cats.indexOf(x[0]) > -1; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false"); catCount(); applyFssai(); persist();
       });
       c.appendChild(b);
     });
+    catCount();
   }
+  function catCount() { var n = S.cats.length, e = $("#catCount"); if (e) { e.textContent = n ? n + " selected" : "None selected yet"; e.classList.toggle("has", n > 0); } }
   function hasFood() { return CATS.some(function (x) { return x[1] && S.cats.indexOf(x[0]) > -1; }); }
   function applyFssai() {
     var food = hasFood(); $("#fssaiBlock").hidden = !food;
