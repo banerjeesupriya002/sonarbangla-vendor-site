@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=9">
+<link rel="stylesheet" href="assets/styles.css?v=10">
 <link rel="preload" as="image" href="https://images.pexels.com/photos/5780833/pexels-photo-5780833.jpeg?auto=compress&cs=tinysrgb&w=1200" fetchpriority="high">
 </head>
 <body>
@@ -174,16 +174,18 @@
       <div class="eyebrow">Chapter 05 · Your brand, in your words</div>
       <h2 class="display">What do you <em>make &amp; sell?</em></h2>
       <p class="sub">Product categories * — select one or more.</p>
-      <div class="cat-bar"><span class="muted">Drag to spin · tap the cards that fit your products</span><span id="catCount" class="count">None selected yet</span></div>
+      <div class="cat-bar"><span class="muted">Swipe to browse · tap the centre card to add it</span><span id="catCount" class="count">None selected yet</span></div>
       <div class="rack" id="rack">
-        <div class="stage" id="stage" tabindex="0" role="group" aria-label="Product categories. Drag or use arrow keys to rotate, tap a card to select.">
+        <div class="stage" id="stage" tabindex="0" role="group" aria-label="Product categories. Drag or use the arrow keys to browse, then add the ones that fit.">
           <div class="floor" aria-hidden="true"></div>
           <div class="ring" id="chips"></div>
+          <button type="button" class="rk-arrow l" id="rkPrev" aria-label="Previous category">‹</button>
+          <button type="button" class="rk-arrow r" id="rkNext" aria-label="Next category">›</button>
         </div>
+        <div class="rk-dots" id="rkDots" aria-hidden="true"></div>
         <div class="rack-ui">
-          <button type="button" class="rk-btn" id="rkPrev" aria-label="Previous category">←</button>
+          <button type="button" class="btn-editorial btn-small" id="rkPick">+ Add this category</button>
           <button type="button" class="rk-link" id="rkGrid" aria-pressed="false">Grid view</button>
-          <button type="button" class="rk-btn" id="rkNext" aria-label="Next category">→</button>
         </div>
       </div>
 
@@ -245,6 +247,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="assets/config.js"></script>
-<script src="assets/app.js?v=11" defer></script>
+<script src="assets/app.js?v=12" defer></script>
 </body>
 </html>

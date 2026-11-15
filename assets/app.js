@@ -241,94 +241,121 @@
     ["Bengal Handicrafts & Home Decor",0,"craft","#f2d7c3"],["Bengal Artisan Crafts & Regional Specialities",0,"artisan","#ecd5cf"],["Bengali Gift Hampers & Combos",1,"hamper","#f6dccb"],
     ["Incense, Dhoop & Puja Items",0,"incense","#efe0d2"],["Bengali Tea & Beverages",1,"drink","#ecdfcb"],["Others",0,"other","#f1ead9"]
   ];
-  /* ---------- revolving category rack ---------- */
-  var RK = { angle: 0, vel: 0, target: null, drag: false, down: false, sx: 0, px: 0, pt: 0, sway: 0, swayV: 0, W: 150, R: 480, step: 20, grid: false, idle: 0, hover: false, suppress: false, started: false, t: 0, shades: [] };
+  /* ---------- coverflow category picker ---------- */
+  var RK = { pos: 0, target: null, vel: 0, down: false, drag: false, sx: 0, px: 0, pt: 0, W: 220, CH: 230, g1: 200, g2: 160, vis: 3.4, sc: 1.12, grid: false, nextAt: 0, hover: false, suppress: false, started: false, t: 0, els: [], dots: [], last: null, mid: -1, wt: 0 };
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function nowMs() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function nCat() { return CATS.length; }
+  function wrapD(d) { var n = nCat(); return d - n * Math.round(d / n); }
+  function midIdx() { var n = nCat(); return ((Math.round(RK.pos) % n) + n) % n; }
   function rackSize() {
-    var rack = $("#rack"), w = rack.clientWidth || 360, n = CATS.length;
-    RK.W = w < 480 ? 142 : (w < 820 ? 172 : 200); RK.step = 360 / n;
-    RK.R = Math.round(RK.W / 2 / Math.tan(Math.PI / n) * 1.1);
-    rack.style.setProperty("--W", RK.W + "px"); rack.style.setProperty("--R", RK.R + "px");
-    rack.style.setProperty("--H", Math.round(RK.W * 0.75 + 62 + 26) + "px");
+    var rack = $("#rack"), w = rack.clientWidth || 360, sm = w < 480;
+    RK.W = sm ? 164 : (w < 820 ? 196 : 232); RK.sc = sm ? 1.08 : 1.12;
+    RK.g1 = Math.round(RK.W * (sm ? 0.74 : 0.93)); RK.g2 = Math.round(RK.W * (sm ? 0.5 : 0.78));
+    RK.vis = sm ? 2.0 : (w < 820 ? 2.7 : 3.6); RK.CH = Math.round(RK.W * 0.75 + 64);
+    rack.style.setProperty("--W", RK.W + "px"); rack.style.setProperty("--CH", RK.CH + "px"); RK.last = null;
   }
-  function centerOn(i) { var t = i * RK.step; return t + 360 * Math.round((RK.angle - t) / 360); }
+  function goTo(i) { RK.target = Math.round(RK.pos + wrapD(i - RK.pos)); RK.nextAt = nowMs() + 4500; }
+  function toggleCat(i) {
+    var nm = CATS[i][0], j = S.cats.indexOf(nm); if (j > -1) S.cats.splice(j, 1); else S.cats.push(nm);
+    var now = S.cats.indexOf(nm) > -1, b = RK.els[i]; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false");
+    if (RK.dots[i]) RK.dots[i].classList.toggle("sel", now);
+    catCount(); applyFssai(); persist(); refreshPick();
+  }
+  function refreshPick() {
+    var p = $("#rkPick"); if (!p) return; var on = S.cats.indexOf(CATS[midIdx()][0]) > -1;
+    p.textContent = on ? "✓ Added — tap to remove" : "+ Add this category"; p.classList.toggle("is-on", on);
+  }
   function buildChips() {
-    var c = $("#chips"); c.innerHTML = ""; RK.shades = [];
-    c.insertAdjacentHTML("beforeend", '<span class="rail" aria-hidden="true"></span>');
+    var c = $("#chips"), dd = $("#rkDots"); c.innerHTML = ""; dd.innerHTML = ""; RK.els = []; RK.dots = [];
     rackSize();
     CATS.forEach(function (x, i) {
       var on = S.cats.indexOf(x[0]) > -1, hasPhoto = (window.SBH_CAT_PHOTOS || []).indexOf(x[2]) > -1;
       var b = document.createElement("button"); b.type = "button"; b.className = "cat" + (on ? " on" : ""); b.setAttribute("aria-pressed", on ? "true" : "false");
-      b.style.setProperty("--tint", x[3]); b.style.setProperty("--ry", (i * RK.step) + "deg"); b.style.setProperty("--o", "0");
-      b.innerHTML = '<span class="sway"><span class="hook" aria-hidden="true"></span>' +
-        '<span class="face front"><span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" decoding="async" draggable="false">' : "") +
+      b.style.setProperty("--tint", x[3]); b.style.visibility = "hidden";
+      b.innerHTML = '<span class="card"><span class="art' + (hasPhoto ? " photo" : "") + '">' + (hasPhoto ? '<img src="assets/cats/' + x[2] + '.jpg" alt="" decoding="async" draggable="false">' : "") +
         '<svg viewBox="0 0 120 90" aria-hidden="true">' + ART[x[2]] + '</svg><span class="tick"><svg viewBox="0 0 20 20"><path d="M4 10.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>' +
-        '<span class="nm"></span><span class="shade"></span></span>' +
-        '<span class="face back" aria-hidden="true"><img src="assets/logo-256.png" alt="" draggable="false"></span></span>';
+        '<span class="nm"></span><span class="shade"></span></span>';
       b.querySelector(".nm").textContent = x[0];
       var im = b.querySelector(".art img"); if (im) { im.addEventListener("error", function () { im.parentNode.classList.remove("photo"); im.remove(); }); im.addEventListener("load", function () { im.classList.add("ld"); }); if (im.complete && im.naturalWidth) im.classList.add("ld"); }
       b.addEventListener("click", function () {
         if (RK.suppress) return;
-        var j = S.cats.indexOf(x[0]); if (j > -1) S.cats.splice(j, 1); else S.cats.push(x[0]);
-        var now = S.cats.indexOf(x[0]) > -1; b.classList.toggle("on", now); b.setAttribute("aria-pressed", now ? "true" : "false");
-        if (!RK.grid) { RK.target = centerOn(i); } RK.idle = nowMs(); catCount(); applyFssai(); persist();
+        if (RK.grid || Math.abs(wrapD(i - RK.pos)) < 0.5) toggleCat(i); else goTo(i);
       });
-      b.addEventListener("focus", function () { if (!RK.grid && !RK.drag) { RK.target = centerOn(i); RK.idle = nowMs(); } });
-      c.appendChild(b); RK.shades.push(b);
+      b.addEventListener("focus", function () { if (!RK.grid && !RK.down && Math.abs(wrapD(i - RK.pos)) >= 0.5) goTo(i); });
+      c.appendChild(b); RK.els.push(b);
+      var d = document.createElement("button"); d.type = "button"; d.className = "rk-dot" + (on ? " sel" : ""); d.setAttribute("aria-label", x[0]); d.tabIndex = -1;
+      d.addEventListener("click", function () { goTo(i); }); dd.appendChild(d); RK.dots.push(d);
     });
-    catCount(); rackStart();
+    catCount(); RK.mid = -1; RK.nextAt = nowMs() + 2600; rackPlace(true); refreshPick(); rackStart();
+  }
+  function rackPlace(force) {
+    if (!force && RK.last != null && Math.abs(RK.pos - RK.last) < 0.0004) return;
+    RK.last = RK.pos; var n = nCat(), mid = midIdx();
+    for (var i = 0; i < n; i++) {
+      var d = wrapD(i - RK.pos), ad = Math.abs(d), sg = d < 0 ? -1 : 1, e = RK.els[i], fade = Math.max(0, Math.min(1, RK.vis - ad));
+      if (fade <= 0) { if (e._v !== 0) { e.style.visibility = "hidden"; e._v = 0; } continue; }
+      var x = sg * (RK.g1 * Math.min(ad, 1) + RK.g2 * Math.max(0, ad - 1)), rot = sg * Math.min(ad, 1) * 30,
+          sc = RK.sc - 0.26 * Math.min(ad, 1) - 0.1 * Math.max(0, Math.min(ad, 3) - 1), z = -Math.min(ad, 2) * 50;
+      if (e._v !== 1) { e.style.visibility = "visible"; e._v = 1; }
+      e.style.transform = "translate3d(" + x.toFixed(1) + "px,0," + z.toFixed(0) + "px) rotateY(" + rot.toFixed(1) + "deg) scale(" + sc.toFixed(3) + ")";
+      e.style.opacity = fade.toFixed(2); e.style.zIndex = String(200 - Math.round(ad * 20));
+      e.style.setProperty("--o", Math.min(0.42, Math.max(0, ad - 0.25) * 0.22).toFixed(2));
+    }
+    if (mid !== RK.mid) {
+      if (RK.mid > -1) { RK.els[RK.mid].classList.remove("mid"); RK.dots[RK.mid].classList.remove("act"); }
+      RK.els[mid].classList.add("mid"); RK.dots[mid].classList.add("act"); RK.mid = mid; refreshPick();
+    }
   }
   function rackStart() {
     if (RK.started) return; RK.started = true;
-    var st = $("#stage"), ring = $("#chips");
-    st.addEventListener("pointerdown", function (e) { if (RK.grid) return; RK.down = true; RK.drag = false; RK.sx = RK.px = e.clientX; RK.pt = nowMs(); RK.target = null; RK.idle = nowMs(); });
+    var st = $("#stage");
+    st.addEventListener("pointerdown", function (e) { if (RK.grid || (e.target.closest && e.target.closest(".rk-arrow"))) return; RK.down = true; RK.drag = false; RK.sx = RK.px = e.clientX; RK.pt = nowMs(); RK.target = null; RK.vel = 0; RK.nextAt = nowMs() + 4500; });
     st.addEventListener("pointermove", function (e) {
       if (!RK.down) return;
       var t = nowMs(), dx = e.clientX - RK.px, dt = Math.max(1, t - RK.pt);
       if (!RK.drag && Math.abs(e.clientX - RK.sx) > 6) { RK.drag = true; try { st.setPointerCapture(e.pointerId); } catch (x) {} }
-      if (RK.drag) { RK.angle -= dx * 0.3; RK.vel = RK.vel * 0.6 + (-dx * 0.3 / dt * 1000) * 0.4; RK.px = e.clientX; RK.pt = t; RK.idle = t; }
+      if (RK.drag) { var dp = -dx / (RK.g1 * 0.95); RK.pos += dp; RK.vel = RK.vel * 0.6 + (dp / dt * 1000) * 0.4; RK.px = e.clientX; RK.pt = t; }
     });
-    function up() { if (!RK.down) return; RK.down = false; if (RK.drag) { RK.drag = false; RK.suppress = true; setTimeout(function () { RK.suppress = false; }, 60); } RK.idle = nowMs(); }
+    function up() {
+      if (!RK.down) return; RK.down = false;
+      if (RK.drag) { RK.drag = false; RK.suppress = true; setTimeout(function () { RK.suppress = false; }, 60); var v = Math.max(-6, Math.min(6, RK.vel)); RK.target = Math.round(RK.pos + v * 0.2); RK.vel = 0; }
+      RK.nextAt = nowMs() + 4500;
+    }
     st.addEventListener("pointerup", up); st.addEventListener("pointercancel", up);
     st.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") RK.hover = true; });
-    st.addEventListener("pointerleave", function (e) { RK.hover = false; RK.idle = nowMs(); });
-    st.addEventListener("wheel", function (e) { if (RK.grid || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; e.preventDefault(); RK.target = null; RK.angle += e.deltaX * 0.15; RK.idle = nowMs(); }, { passive: false });
-    st.addEventListener("keydown", function (e) { if (e.key === "ArrowLeft") { rackStep(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { rackStep(1); e.preventDefault(); } });
+    st.addEventListener("pointerleave", function () { RK.hover = false; RK.nextAt = nowMs() + 2000; });
+    st.addEventListener("wheel", function (e) {
+      if (RK.grid || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; e.preventDefault();
+      RK.target = null; RK.pos += e.deltaX / 280; clearTimeout(RK.wt); RK.wt = setTimeout(function () { RK.target = Math.round(RK.pos); }, 140); RK.nextAt = nowMs() + 4500;
+    }, { passive: false });
+    st.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft") { rackStep(-1); e.preventDefault(); } else if (e.key === "ArrowRight") { rackStep(1); e.preventDefault(); }
+    });
     $("#rkPrev").addEventListener("click", function () { rackStep(-1); });
     $("#rkNext").addEventListener("click", function () { rackStep(1); });
+    $("#rkPick").addEventListener("click", function () { toggleCat(midIdx()); RK.nextAt = nowMs() + 4500; });
     $("#rkGrid").addEventListener("click", function () {
-      RK.grid = !RK.grid; $("#rack").classList.toggle("grid", RK.grid); this.textContent = RK.grid ? "Rack view" : "Grid view"; this.setAttribute("aria-pressed", RK.grid ? "true" : "false");
-      if (RK.grid) { ring.style.transform = ""; } RK.idle = nowMs();
+      RK.grid = !RK.grid; $("#rack").classList.toggle("grid", RK.grid); this.textContent = RK.grid ? "Showcase view" : "Grid view"; this.setAttribute("aria-pressed", RK.grid ? "true" : "false");
+      if (!RK.grid) { RK.last = null; rackPlace(true); } RK.nextAt = nowMs() + 3000;
     });
-    window.addEventListener("resize", function () { rackSize(); });
+    window.addEventListener("resize", function () { rackSize(); rackPlace(true); });
     RK.t = nowMs(); requestAnimationFrame(rackFrame);
   }
-  function rackStep(d) { var base = (RK.target != null ? RK.target : Math.round(RK.angle / RK.step) * RK.step); RK.target = base + d * RK.step; RK.idle = nowMs(); }
+  function rackStep(d) { var base = (RK.target != null ? RK.target : Math.round(RK.pos)); RK.target = base + d; RK.nextAt = nowMs() + 4500; }
   function rackFrame() {
-    var t = nowMs(), dt = Math.min(0.05, (t - RK.t) / 1000); RK.t = t;
-    var s5 = $("#s5");
-    if (!s5 || !s5.classList.contains("on") || RK.grid) { setTimeout(function () { RK.t = nowMs(); requestAnimationFrame(rackFrame); }, 250); return; }
-    var drive = 0;
-    if (RK.target != null) {
-      var d = RK.target - RK.angle; RK.angle += d * Math.min(1, dt * 7); drive = d * 4;
-      if (Math.abs(d) < 0.05) { RK.angle = RK.target; RK.target = null; RK.vel = 0; }
-    } else if (!RK.drag) {
-      RK.angle += RK.vel * dt; RK.vel *= Math.pow(0.04, dt); drive = RK.vel;
-      if (!REDUCED && !RK.hover && !RK.down && t - RK.idle > 2600 && Math.abs(RK.vel) < 20) { RK.angle += 7 * dt; drive += 7; }
-    } else { drive = RK.vel; }
-    if (!REDUCED) { var acc = -45 * RK.sway - 5.5 * RK.swayV + 1.1 * Math.max(-420, Math.min(420, drive)) * -0.06 * 8; RK.swayV += acc * dt; RK.sway += RK.swayV * dt; RK.sway = Math.max(-11, Math.min(11, RK.sway)); }
-    var ring = $("#chips");
-    ring.style.transform = "translateZ(" + (-RK.R) + "px) rotateY(" + (-RK.angle) + "deg)";
-    ring.style.setProperty("--sway", RK.sway.toFixed(2) + "deg");
-    for (var i = 0; i < RK.shades.length; i++) {
-      var rel = ((i * RK.step - RK.angle) % 360 + 540) % 360 - 180, f = (1 + Math.cos(rel * Math.PI / 180)) / 2;
-      var o = Math.min(0.82, Math.pow(1 - f, 1.1) * 1.15).toFixed(2);
-      if (RK.shades[i]._o !== o) { RK.shades[i]._o = o; RK.shades[i].style.setProperty("--o", o); }
-    }
-    requestAnimationFrame(rackFrame);
+    var t = nowMs(), dt = Math.min(0.05, (t - RK.t) / 1000); RK.t = t; var s5 = $("#s5");
+    if (!s5 || !s5.classList.contains("on") || RK.grid || document.hidden) { setTimeout(function () { RK.t = nowMs(); requestAnimationFrame(rackFrame); }, 250); return; }
+    var cw = $("#rack").clientWidth; if (cw && cw !== RK.cw) { RK.cw = cw; rackSize(); rackPlace(true); }
+    if (RK.down && RK.drag) { /* following the finger */ }
+    else if (RK.target != null) {
+      var d = RK.target - RK.pos; RK.pos += d * Math.min(1, dt * 6.5);
+      if (Math.abs(d) < 0.002) { RK.pos = RK.target; RK.target = null; if (RK.nextAt < t + 1800) RK.nextAt = t + 2400; }
+    } else if (!REDUCED && !RK.hover && !RK.down && t >= RK.nextAt) { RK.target = Math.round(RK.pos) + 1; }
+    else if (RK.hover) { RK.nextAt = Math.max(RK.nextAt, t + 1500); }
+    rackPlace(false); requestAnimationFrame(rackFrame);
   }
-  function catCount() { var n = S.cats.length, e = $("#catCount"); if (e) { e.textContent = n ? n + " selected" : "None selected yet"; e.classList.toggle("has", n > 0); } }
+    function catCount() { var n = S.cats.length, e = $("#catCount"); if (e) { e.textContent = n ? n + " selected" : "None selected yet"; e.classList.toggle("has", n > 0); } }
   function hasFood() { return CATS.some(function (x) { return x[1] && S.cats.indexOf(x[0]) > -1; }); }
   function applyFssai() {
     var food = hasFood(); $("#fssaiBlock").hidden = !food;
