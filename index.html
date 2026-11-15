@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Manrope:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="assets/styles.css?v=10">
+<link rel="stylesheet" href="assets/styles.css?v=11">
 <link rel="preload" as="image" href="https://images.pexels.com/photos/5780833/pexels-photo-5780833.jpeg?auto=compress&cs=tinysrgb&w=1200" fetchpriority="high">
 </head>
 <body>
@@ -102,7 +102,7 @@
       <div class="faq">
         <div class="eyebrow">Frequently Asked · Before you apply</div>
         <details><summary><span>01</span>Who can register as a vendor?</summary><p>Any registered brand, manufacturer, artisan, or FPO based in India — with a special focus on authentic Bengali products. You'll need a valid PAN, GST (if applicable), and a bank account in the business name.</p></details>
-        <details><summary><span>02</span>What documents are required to onboard?</summary><p>PAN card, cancelled cheque or bank passbook (first page), and — if you are GST-registered — your GST certificate. Food sellers should also share their FSSAI licence if they have one. Payout bank details are collected separately, only after your application is approved, via a private secure link.</p></details>
+        <details><summary><span>02</span>What documents are required to onboard?</summary><p>A cancelled cheque or bank passbook (first page) is always needed. If your GSTIN is Active on the GST portal we verify your PAN and business details automatically, so nothing else is required. If you are not GST-registered, or your GST is inactive or cancelled, we also need your PAN card (and a short signed declaration if your GST is inactive or cancelled). Food sellers should also share their FSSAI licence if they have one. Payout bank details are collected separately, only after your application is approved, via a private secure link.</p></details>
         <details><summary><span>03</span>How much commission does Sonar Bangla Haat take?</summary><p>0% on your first 30 sales as a Founding Vendor. Thereafter, a tiered 7%–9% commission depending on your category — no flat cut, no hidden listing fees, no surprise deductions.</p></details>
         <details><summary><span>04</span>How long does approval take?</summary><p>Our team reviews every application within 24 hours. Once approved, your branded storefront goes live within 48–72 hours and we personally guide you through your first product listing.</p></details>
         <details><summary><span>05</span>When and how do I receive payouts?</summary><p>Payouts settle on a regular weekly cycle directly to your registered bank account, with a transparent statement of every sale, fee, and adjustment. Bank details are collected via a private, encrypted link only after approval.</p></details>
@@ -217,10 +217,12 @@
       <div class="eyebrow">Chapter 06 · Verification documents</div>
       <h2 class="display">Last step, <em>almost there.</em></h2>
       <div class="docs">
+        <p class="why" id="docsNote" style="font-weight:500"></p>
         <p class="why"><b>Why we ask —</b> to keep every vendor on the marketplace verified and every payout secure. Files are stored privately and only seen by our onboarding team.</p>
         <label class="dropzone" id="dz_pan"><b>Upload PAN Card *</b><span>Drop file here or click to upload · JPG · PNG · PDF · up to 5MB</span><input type="file" accept=".jpg,.jpeg,.png,.pdf" data-doc="pan_document"><em class="fn muted" style="display:block;font-size:12.5px;margin-top:6px"></em></label>
         <label class="dropzone" id="dz_cheque"><b>Upload Cancelled Cheque or Bank Passbook (first page) *</b><span>Drop file here or click to upload · JPG · PNG · PDF · up to 5MB</span><input type="file" accept=".jpg,.jpeg,.png,.pdf" data-doc="cheque_document"><em class="fn muted" style="display:block;font-size:12.5px;margin-top:6px"></em></label>
         <label class="dropzone" id="dz_gst" hidden><b>Upload GST Certificate *</b><span>Drop file here or click to upload · JPG · PNG · PDF · up to 5MB</span><input type="file" accept=".jpg,.jpeg,.png,.pdf" data-doc="gst_document"><em class="fn muted" style="display:block;font-size:12.5px;margin-top:6px"></em></label>
+        <label class="dropzone" id="dz_decl" hidden><b>Upload signed declaration *</b><span>A short signed note on your letterhead stating your GST status and that you will sell on Sonar Bangla Haat · JPG · PNG · PDF · up to 5MB</span><input type="file" accept=".jpg,.jpeg,.png,.pdf" data-doc="declaration_document"><em class="fn muted" style="display:block;font-size:12.5px;margin-top:6px"></em></label>
         <label class="dropzone" id="dz_fssai" hidden><b>Upload FSSAI Licence (optional)</b><span>Drop file here or click to upload · JPG · PNG · PDF · up to 5MB</span><input type="file" accept=".jpg,.jpeg,.png,.pdf" data-doc="fssai_document"><em class="fn muted" style="display:block;font-size:12.5px;margin-top:6px"></em></label>
       </div>
       <div class="note"><b>Note —</b> bank account details are <u>not</u> collected here. After approval, we'll email you a private, secure link to add your payout details.</div>
@@ -247,6 +249,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="assets/config.js"></script>
-<script src="assets/app.js?v=12" defer></script>
+<script src="assets/app.js?v=13" defer></script>
 </body>
 </html>

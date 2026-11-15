@@ -54,7 +54,7 @@
   }
 
   /* ---------- state persistence ---------- */
-  function collect() { FIELDS.forEach(function (k) { var e = $("#" + k); if (e) S.data[k] = e.value.trim(); }); S.data.gst_ok = S.gstOk ? 1 : 0; S.data.gst_registered = S.gst; S.data.fssai_has = S.fssai; S.data.product_categories = S.cats.slice(); }
+  function collect() { FIELDS.forEach(function (k) { var e = $("#" + k); if (e) S.data[k] = e.value.trim(); }); S.data.gst_ok = S.gstOk ? 1 : 0; S.data.gst_status = (S.gst === "yes" && S.gstOk) ? (S.gstStatus || "") : ""; S.data.gst_registered = S.gst; S.data.fssai_has = S.fssai; S.data.product_categories = S.cats.slice(); }
   function persist(remote) {
     collect();
     try { localStorage.setItem(LS, JSON.stringify({ token: S.token, step: S.step, gst: S.gst, fssai: S.fssai, cats: S.cats, data: S.data })); } catch (e) {}
@@ -67,6 +67,7 @@
     if (!o) return;
     S.token = o.token || S.token; S.gst = o.gst || ""; S.fssai = o.fssai || ""; S.cats = o.cats || []; S.data = o.data || {};
     FIELDS.forEach(function (k) { if (S.data[k] != null) setVal(k, S.data[k]); });
+    S.gstStatus = S.data.gst_status || "";
     S.gstOk = S.gst === "yes" && (!!Number(S.data.gst_ok) || (okGSTIN(S.data.gstin || "") && !!S.data.legal_name && !!S.data.pin_code));
     $$("[data-gst]").forEach(function (b) { b.classList.toggle("on", b.dataset.gst === S.gst); });
     $$("[data-fssai]").forEach(function (b) { b.classList.toggle("on", b.dataset.fssai === S.fssai); });
@@ -86,7 +87,7 @@
     $$(".slide").forEach(function (s) { s.classList.toggle("on", +s.dataset.step === n); });
     $("#pcur").textContent = String(n).padStart(2, "0");
     $("#pfill").style.transform = "scaleX(" + Math.max(0, Math.min(1, (n - 1) / (TOTAL - 1))) + ")";
-    if (n === 6) buildSummary();
+    if (n === 6) { buildSummary(); applyDocs(); }
     if (n >= 3) preloadPhotos();
     window.scrollTo({ top: 0, behavior: "smooth" });
     if (push !== false) { try { history.replaceState(null, "", location.pathname + (S.token && n < 7 ? "" : "")); } catch (e) {} }
@@ -135,9 +136,8 @@
   function applyGst(load) {
     var yes = S.gst === "yes";
     $("#gstPanel").hidden = !yes;
-    $("#dz_gst").hidden = !yes;
     $("#pan_number").closest(".field").querySelector("label").textContent = "PAN Number *";
-    if (!yes) S.gstOk = false;
+    if (!yes) { S.gstOk = false; S.gstStatus = ""; }
     $("#bizForm").hidden = !S.gst; // nothing chosen yet: no manual entry
     lockFields();
     if (yes && load !== false && !$("#capImg img")) loadCaptcha();
@@ -171,7 +171,7 @@
     $("#capRefresh").addEventListener("click", loadCaptcha);
     $("#gstin").addEventListener("input", function () {
       this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      if (S.gstOk && this.value !== S.data.gstin_ok_for) { S.gstOk = false; LOCK.forEach(function (k) { var e = $("#" + k); if (e) { if (e.tagName === "SELECT") e.disabled = false; e.readOnly = false; setVal(k, ""); } }); lockFields(); }
+      if (S.gstOk && this.value !== S.data.gstin_ok_for) { S.gstOk = false; S.gstStatus = ""; LOCK.forEach(function (k) { var e = $("#" + k); if (e) { if (e.tagName === "SELECT") e.disabled = false; e.readOnly = false; setVal(k, ""); } }); lockFields(); }
     });
     $("#pan_number").addEventListener("input", function () { this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); });
     $("#gstFetch").addEventListener("click", function () {
@@ -179,10 +179,12 @@
       if (!okGSTIN(g)) { err("gstin", "Enter a valid 15-character GSTIN"); return; }
       if (!c) { setStatus("Type the captcha shown above.", "bad"); return; }
       var b = this; b.disabled = true; setStatus("Fetching from the GST portal…");
-      api("/gst/lookup", { json: { sid: S.sid, gstin: g, captcha: c } }).then(function (r) {
-        if (r.data) { fillFromGST(r.data); S.gstOk = true; S.data.gstin_ok_for = g; lockFields(); persist(true); }
-        setStatus("✓ Details fetched and filled below" + (r.data && r.data.status ? " · GST status: " + r.data.status : "") + ".", "ok");
-        if (!r.data || !r.data.address_line_1) setStatus("GSTIN verified. The GST portal didn't return a few details — please complete the empty fields.", "ok");
+      api("/gst/lookup", { json: { sid: S.sid, gstin: g, captcha: c, token: S.token } }).then(function (r) {
+        if (r.data) { fillFromGST(r.data); S.gstOk = true; S.gstStatus = r.data.status || ""; S.data.gstin_ok_for = g; lockFields(); persist(true); }
+        var gs = (r.data && r.data.status) || "";
+        if (gs && !/^active$/i.test(gs)) setStatus("GST status on the portal: " + gs + ". You can still continue — in the last step you'll upload your PAN card and a short signed declaration instead of a GST certificate.", "warn");
+        else setStatus("✓ Details fetched and filled below" + (gs ? " · GST status: " + gs + " — no PAN or GST document needed" : "") + ".", "ok");
+        if (r.data && !r.data.address_line_1) setStatus("GSTIN verified. The GST portal didn't return a few details — please complete the empty fields.", "ok");
         loadCaptcha();
       }).catch(function (e) {
         var m = e.message || "Lookup failed.";
@@ -395,12 +397,29 @@
   }
   function buildSummary() {
     collect(); var d = S.data, s = $("#summary"); s.innerHTML = "";
-    var rows = [["Brand", d.brand_name], ["Owner", d.owner_name], ["Email", d.email], ["Mobile", d.mobile], ["GST", S.gst === "yes" ? d.gstin : "Not registered / exempt"], ["PAN", d.pan_number], ["Address", [d.address_line_1, d.address_line_2, d.district, d.state, d.pin_code].filter(Boolean).join(", ")], ["Categories", S.cats.join(", ")]];
+    var rows = [["Brand", d.brand_name], ["Owner", d.owner_name], ["Email", d.email], ["Mobile", d.mobile], ["GST", S.gst === "yes" ? (d.gstin + (S.gstStatus ? " · " + S.gstStatus : "")) : "Not registered / exempt"], ["PAN", d.pan_number], ["Address", [d.address_line_1, d.address_line_2, d.district, d.state, d.pin_code].filter(Boolean).join(", ")], ["Categories", S.cats.join(", ")]];
     if (hasFood()) rows.push(["FSSAI", S.fssai === "yes" ? d.fssai_number : "Not yet — will apply"]);
     rows.forEach(function (r) { var div = document.createElement("div"), a = document.createElement("span"), b = document.createElement("span"); a.textContent = r[0]; b.textContent = r[1] || "—"; div.appendChild(a); div.appendChild(b); s.appendChild(div); });
   }
+  // Which documents are needed: cheque always; PAN + GST proof only when the GST portal has not confirmed an ACTIVE GSTIN.
+  function docNeeds() {
+    var verified = S.gst === "yes" && S.gstOk && !!S.gstStatus, active = verified && /^active$/i.test(S.gstStatus);
+    var n = ["cheque_document"];
+    if (!active) { n.push("pan_document"); if (S.gst === "yes") n.push(verified ? "declaration_document" : "gst_document"); }
+    return n;
+  }
+  function applyDocs() {
+    var n = docNeeds(), map = { pan_document: "dz_pan", cheque_document: "dz_cheque", gst_document: "dz_gst", declaration_document: "dz_decl" };
+    Object.keys(map).forEach(function (k) { var e = $("#" + map[k]); if (e) e.hidden = n.indexOf(k) < 0; });
+    var note = $("#docsNote"), st = S.gstStatus;
+    if (S.gst === "yes" && S.gstOk && st && /^active$/i.test(st)) note.textContent = "Your GSTIN is Active on the GST portal, so we already have your business and PAN details — only a cancelled cheque is needed.";
+    else if (S.gst === "yes" && S.gstOk && st) { note.textContent = "Your GST status on the portal is " + st + ". Please upload your PAN card and a short signed declaration (instead of a GST certificate), plus a cancelled cheque."; var b = $("#dz_decl b"); if (b) b.textContent = "Upload signed declaration (GST status: " + st + ") *"; }
+    else if (S.gst === "yes") note.textContent = "Please upload your PAN card, GST certificate and a cancelled cheque.";
+    else note.textContent = "As you are not GST registered, please upload your PAN card and a cancelled cheque.";
+    note.hidden = false;
+  }
   function submit() {
-    var need = ["pan_document", "cheque_document"]; if (S.gst === "yes") need.push("gst_document");
+    applyDocs(); var need = docNeeds();
     var miss = need.filter(function (k) { return !files[k]; });
     $$(".dropzone").forEach(function (d) { d.classList.remove("err"); });
     if (miss.length) { miss.forEach(function (k) { $("[data-doc=" + k + "]").closest(".dropzone").classList.add("err"); }); toast("Please upload the required documents.", true); return; }
@@ -411,7 +430,7 @@
     Object.keys(d).forEach(function (k) { if (k !== "product_categories") fd.append(k, d[k] == null ? "" : d[k]); });
     fd.append("product_categories", JSON.stringify(S.cats));
     fd.append("mobile", normPhone(d.mobile)); fd.append("whatsapp", normPhone(d.whatsapp));
-    Object.keys(files).forEach(function (k) { fd.append(k, files[k]); });
+    Object.keys(files).forEach(function (k) { if (need.indexOf(k) > -1 || k === "fssai_document") fd.append(k, files[k]); });
     var b = $("#submitBtn"), old = b.innerHTML; b.disabled = true; b.innerHTML = '<span class="spin"></span>Submitting';
     api("/submit", { form: fd }).then(function () {
       try { localStorage.removeItem(LS); } catch (e) {}
