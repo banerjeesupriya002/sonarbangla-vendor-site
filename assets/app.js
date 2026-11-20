@@ -240,7 +240,7 @@
     ["Traditional Rice & Grains",1,"rice","#f3e6cf"],["Cold-Pressed Mustard Oil",1,"oil","#f6e8b8"],["Pure Cow Ghee",1,"ghee","#f8ecc4"],["Bengali Spices & Masala",1,"spice","#f4dccd"],
     ["Bengali Chanachur & Mixtures",1,"mixture","#f3d9c8"],["Tea",1,"tea","#e6ecd2"],["Snacks & Nimki",1,"snack","#f6e3bd"],["Bori & Sun-Dried Foods",1,"bori","#efe3cf"],
     ["Traditional Achar & Kasundi",1,"achar","#f2d4c8"],["Traditional Jaggery & Gur",1,"jaggery","#efd9bd"],["Traditional Bengali Sweets",1,"sweet","#f7e0d8"],["Bengali Pithe & Nadu",1,"pithe","#f3e4c8"],
-    ["Bengal Handicrafts & Home Decor",0,"craft","#f2d7c3"],["Bengal Artisan Crafts & Regional Specialities",0,"artisan","#ecd5cf"],["Bengali Gift Hampers & Combos",1,"hamper","#f6dccb"],
+    ["Bengal Handicrafts & Home Decor",0,"craft","#f2d7c3"],["Bengal Artisan Crafts & Regional Specialities",0,"artisan","#ecd5cf"],["Bengal Jewellery & Accessories",0,"artisan","#efd9c6"],["Bengali Gift Hampers & Combos",1,"hamper","#f6dccb"],
     ["Incense, Dhoop & Puja Items",0,"incense","#efe0d2"],["Bengali Tea & Beverages",1,"drink","#ecdfcb"],["Others",0,"other","#f1ead9"]
   ];
   /* ---------- coverflow category picker ---------- */
